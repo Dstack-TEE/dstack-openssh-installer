@@ -184,16 +184,19 @@ setup_authorized_keys() {
     local keys_added=0
     local auth_keys_dir="/host${SSH_HOME_DIR}/root/.ssh"
     local auth_keys_file="${auth_keys_dir}/authorized_keys"
+    local start_marker="# BEGIN DSTACK MANAGED KEYS"
+    local end_marker="# END DSTACK MANAGED KEYS"
 
     mkdir -p "${auth_keys_dir}"
+
+    # Collect all keys to be managed
+    local managed_keys=""
 
     # Add key from SSH_PUBKEY environment variable
     if [[ -n "${SSH_PUBKEY}" ]]; then
         log_info "Adding public key from SSH_PUBKEY..."
-        echo "${SSH_PUBKEY}" > "${auth_keys_file}"
-        chmod 600 "${auth_keys_file}"
+        managed_keys="${SSH_PUBKEY}"
         keys_added=1
-        log_success "Public key added from SSH_PUBKEY"
     fi
 
     # Fetch keys from GitHub user
@@ -203,11 +206,10 @@ setup_authorized_keys() {
         local fetched_keys
         if fetched_keys=$(wget -qO- "${github_url}" 2>/dev/null); then
             if [[ -n "${fetched_keys}" ]]; then
-                if [[ ${keys_added} -eq 1 ]]; then
-                    echo "${fetched_keys}" >> "${auth_keys_file}"
+                if [[ -n "${managed_keys}" ]]; then
+                    managed_keys="${managed_keys}"$'\n'"${fetched_keys}"
                 else
-                    echo "${fetched_keys}" > "${auth_keys_file}"
-                    chmod 600 "${auth_keys_file}"
+                    managed_keys="${fetched_keys}"
                 fi
                 keys_added=1
                 log_success "Public keys imported from GitHub (${SSH_GITHUB_USER})"
@@ -219,7 +221,56 @@ setup_authorized_keys() {
         fi
     fi
 
-    if [[ ${keys_added} -eq 0 ]]; then
+    # Update authorized_keys file with markers
+    if [[ ${keys_added} -eq 1 ]]; then
+        local temp_file="${auth_keys_file}.tmp"
+        local user_keys=""
+
+        # Extract user-managed keys if file exists
+        if [[ -f "${auth_keys_file}" ]]; then
+            # Read content before start marker
+            local before_marker
+            before_marker=$(sed -n "1,/^${start_marker}\$/p" "${auth_keys_file}" 2>/dev/null | grep -v "^${start_marker}\$" || true)
+
+            # Read content after end marker
+            local after_marker
+            after_marker=$(sed -n "/^${end_marker}\$/,\$p" "${auth_keys_file}" 2>/dev/null | grep -v "^${end_marker}\$" || true)
+
+            # If markers don't exist, preserve entire file as user keys
+            if ! grep -q "^${start_marker}\$" "${auth_keys_file}" 2>/dev/null; then
+                user_keys=$(cat "${auth_keys_file}")
+            else
+                # Combine before and after sections
+                if [[ -n "${before_marker}" ]] && [[ -n "${after_marker}" ]]; then
+                    user_keys="${before_marker}"$'\n'"${after_marker}"
+                elif [[ -n "${before_marker}" ]]; then
+                    user_keys="${before_marker}"
+                elif [[ -n "${after_marker}" ]]; then
+                    user_keys="${after_marker}"
+                fi
+            fi
+        fi
+
+        # Write new authorized_keys file
+        {
+            # Write user-managed keys first (if any)
+            if [[ -n "${user_keys}" ]]; then
+                echo "${user_keys}"
+                echo ""
+            fi
+
+            # Write managed keys section
+            echo "${start_marker}"
+            echo "${managed_keys}"
+            echo "${end_marker}"
+        } > "${temp_file}"
+
+        # Atomically replace the file
+        mv "${temp_file}" "${auth_keys_file}"
+        chmod 600 "${auth_keys_file}"
+
+        log_success "Authorized keys updated (user keys preserved)"
+    else
         log_warning "No SSH keys configured"
         log_warning "Set SSH_PUBKEY or SSH_GITHUB_USER, or manually add keys to ${auth_keys_file}"
     fi

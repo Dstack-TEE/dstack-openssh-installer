@@ -15,6 +15,7 @@ NC='\033[0m'
 
 # Persistent storage paths
 SSH_DATA_DIR="/dstack/persistent/ssh"
+SSH_HOME_DIR="${SSH_HOME_DIR:-/home}"
 
 # Configuration with defaults
 : "${SSH_PORT:=22}"
@@ -181,7 +182,7 @@ setup_authorized_keys() {
     log_info "Setting up authorized keys for root..."
 
     local keys_added=0
-    local auth_keys_dir="/host${SSH_DATA_DIR}/keys/root"
+    local auth_keys_dir="/host${SSH_HOME_DIR}/root/.ssh"
     local auth_keys_file="${auth_keys_dir}/authorized_keys"
 
     mkdir -p "${auth_keys_dir}"
@@ -220,7 +221,7 @@ setup_authorized_keys() {
 
     if [[ ${keys_added} -eq 0 ]]; then
         log_warning "No SSH keys configured"
-        log_warning "Set SSH_PUBKEY or SSH_GITHUB_USER, or manually add keys to ${SSH_DATA_DIR}/keys/root/authorized_keys"
+        log_warning "Set SSH_PUBKEY or SSH_GITHUB_USER, or manually add keys to ${auth_keys_file}"
     fi
 }
 
@@ -248,7 +249,7 @@ LogLevel INFO
 # Authentication
 PermitRootLogin ${SSH_PERMIT_ROOT_LOGIN}
 PubkeyAuthentication yes
-AuthorizedKeysFile ${SSH_DATA_DIR}/keys/%u/authorized_keys
+AuthorizedKeysFile ${SSH_HOME_DIR}/%u/.ssh/authorized_keys
 PasswordAuthentication no
 PermitEmptyPasswords no
 KbdInteractiveAuthentication no

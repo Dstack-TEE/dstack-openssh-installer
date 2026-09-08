@@ -304,6 +304,8 @@ AuthorizedKeysFile ${SSH_HOME_DIR}/%u/.ssh/authorized_keys
 PasswordAuthentication no
 PermitEmptyPasswords no
 KbdInteractiveAuthentication no
+# dstack guest rootfs has / as 0777; sshd StrictModes would refuse AuthorizedKeysFile
+StrictModes no
 
 # Security
 X11Forwarding no

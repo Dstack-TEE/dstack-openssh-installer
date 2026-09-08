@@ -10,7 +10,8 @@ RUN apk add --no-cache \
     openssl-libs-static \
     zlib-dev \
     zlib-static \
-    wget
+    wget \
+    file
 
 WORKDIR /build
 
@@ -40,7 +41,7 @@ RUN wget https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_
           /build/install/usr/libexec/sshd-session
 
 # Verify static linking
-RUN file /build/install/usr/sbin/sshd | grep -q "statically linked" && \
+RUN file /build/install/usr/sbin/sshd | grep -Eq "statically linked|static-pie linked" && \
     echo "sshd is statically linked"
 
 # Final image

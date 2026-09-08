@@ -199,26 +199,36 @@ setup_authorized_keys() {
         keys_added=1
     fi
 
-    # Fetch keys from GitHub user
+    # Fetch keys from GitHub user(s). SSH_GITHUB_USER accepts a comma-separated list.
     if [[ -n "${SSH_GITHUB_USER}" ]]; then
-        local github_url="https://github.com/${SSH_GITHUB_USER}.keys"
-        log_info "Fetching public keys from GitHub user: ${SSH_GITHUB_USER}..."
-        local fetched_keys
-        if fetched_keys=$(wget -qO- "${github_url}" 2>/dev/null); then
-            if [[ -n "${fetched_keys}" ]]; then
-                if [[ -n "${managed_keys}" ]]; then
-                    managed_keys="${managed_keys}"$'\n'"${fetched_keys}"
-                else
-                    managed_keys="${fetched_keys}"
-                fi
-                keys_added=1
-                log_success "Public keys imported from GitHub (${SSH_GITHUB_USER})"
-            else
-                log_warning "No keys found for GitHub user: ${SSH_GITHUB_USER}"
+        local github_users
+        IFS=',' read -r -a github_users <<< "${SSH_GITHUB_USER}"
+        local github_user
+        for github_user in "${github_users[@]}"; do
+            github_user="${github_user//[[:space:]]/}"
+            if [[ -z "${github_user}" ]]; then
+                continue
             fi
-        else
-            log_error "Failed to fetch keys from GitHub for user: ${SSH_GITHUB_USER}"
-        fi
+
+            local github_url="https://github.com/${github_user}.keys"
+            log_info "Fetching public keys from GitHub user: ${github_user}..."
+            local fetched_keys
+            if fetched_keys=$(wget -qO- "${github_url}" 2>/dev/null); then
+                if [[ -n "${fetched_keys}" ]]; then
+                    if [[ -n "${managed_keys}" ]]; then
+                        managed_keys="${managed_keys}"$'\n'"${fetched_keys}"
+                    else
+                        managed_keys="${fetched_keys}"
+                    fi
+                    keys_added=1
+                    log_success "Public keys imported from GitHub (${github_user})"
+                else
+                    log_warning "No keys found for GitHub user: ${github_user}"
+                fi
+            else
+                log_error "Failed to fetch keys from GitHub for user: ${github_user}"
+            fi
+        done
     fi
 
     # Update authorized_keys file with markers

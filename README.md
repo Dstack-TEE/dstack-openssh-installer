@@ -30,6 +30,13 @@ docker run --rm --privileged --pid=host --net=host -v /:/host \
   $NS/dstack-openssh-installer:latest
 ```
 
+**Import ssh public keys from multiple GitHub usernames:**
+```bash
+docker run --rm --privileged --pid=host --net=host -v /:/host \
+  -e SSH_GITHUB_USER="alice,bob" \
+  $NS/dstack-openssh-installer:latest
+```
+
 **Custom port:**
 ```bash
 docker run --rm --privileged --pid=host --net=host -v /:/host \
@@ -44,7 +51,7 @@ docker run --rm --privileged --pid=host --net=host -v /:/host \
 |----------|---------|-------------|
 | `SSH_PORT` | `22` | SSH listening port |
 | `SSH_PUBKEY` | - | SSH public key for root login |
-| `SSH_GITHUB_USER` | - | GitHub username to import public keys from |
+| `SSH_GITHUB_USER` | - | GitHub username(s) to import public keys from (comma-separated) |
 | `SSH_PERMIT_ROOT_LOGIN` | `prohibit-password` | Root login policy (`yes`, `no`, `prohibit-password`) |
 
 ## Usage After Installation

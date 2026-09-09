@@ -4,37 +4,21 @@ A Docker-based installer for OpenSSH Server on read-only dstack systems.
 
 ## Quick Start
 
-### Build the Installer
-
-```bash
-chmod +x build.sh
-./build.sh $NS/dstack-openssh-installer latest
-docker push $NS/dstack-openssh-installer:latest
-```
-
 ### Install OpenSSH Server
 
-Put one of the instuction below in the prelaunch script of a dstack instance.
+Put one of the instructions below in the prelaunch script of a dstack instance.
+Prebuilt images are published to `ghcr.io/dstack-tee/dstack-openssh-installer`.
+
+**Import ssh public keys from GitHub usernames (comma-separated):**
+```bash
+docker run --rm --privileged --pid=host --net=host -v /:/host -e SSH_GITHUB_USER="alice,bob" ghcr.io/dstack-tee/dstack-openssh-installer:latest
+```
 
 **Single command installation with SSH public key:**
 ```bash
 docker run --rm --privileged --pid=host --net=host -v /:/host \
   -e SSH_PUBKEY="ssh-ed25519 AAAA... user@host" \
-  $NS/dstack-openssh-installer:latest
-```
-
-**Import ssh public keys from GitHub username:**
-```bash
-docker run --rm --privileged --pid=host --net=host -v /:/host \
-  -e SSH_GITHUB_USER="octocat" \
-  $NS/dstack-openssh-installer:latest
-```
-
-**Import ssh public keys from multiple GitHub usernames:**
-```bash
-docker run --rm --privileged --pid=host --net=host -v /:/host \
-  -e SSH_GITHUB_USER="alice,bob" \
-  $NS/dstack-openssh-installer:latest
+  ghcr.io/dstack-tee/dstack-openssh-installer:latest
 ```
 
 **Custom port:**
@@ -42,7 +26,15 @@ docker run --rm --privileged --pid=host --net=host -v /:/host \
 docker run --rm --privileged --pid=host --net=host -v /:/host \
   -e SSH_PORT=2222 \
   -e SSH_PUBKEY="ssh-ed25519 AAAA..." \
-  $NS/dstack-openssh-installer:latest
+  ghcr.io/dstack-tee/dstack-openssh-installer:latest
+```
+
+### Build the Installer Yourself
+
+```bash
+chmod +x build.sh
+./build.sh $NS/dstack-openssh-installer latest
+docker push $NS/dstack-openssh-installer:latest
 ```
 
 ## Environment Variables

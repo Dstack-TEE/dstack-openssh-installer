@@ -58,7 +58,7 @@ Add the following to your `~/.ssh/config`:
 
 ```
 Host my-tee-app
-    ProxyCommand openssl s_client -quiet -connect <app-id>-<port>.<gateway-domain>:443
+    ProxyCommand openssl s_client -quiet -connect <app-id>-<port>.<gateway-domain>:443 -servername <app-id>-<port>.<gateway-domain> -verify_hostname <app-id>-<port>.<gateway-domain> -verify_return_error
 ```
 
 Replace:
@@ -69,7 +69,7 @@ Replace:
 **Example:**
 ```
 Host my-tee-app
-    ProxyCommand openssl s_client -quiet -connect c3c0ed2429a72e11e07c8d5701725968ff234dc0-22.dstack-prod5.phala.network:443
+    ProxyCommand openssl s_client -quiet -connect c3c0ed2429a72e11e07c8d5701725968ff234dc0-22.dstack-prod5.phala.network:443 -servername c3c0ed2429a72e11e07c8d5701725968ff234dc0-22.dstack-prod5.phala.network -verify_hostname c3c0ed2429a72e11e07c8d5701725968ff234dc0-22.dstack-prod5.phala.network -verify_return_error
 ```
 
 **2. Connect**
